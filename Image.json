@@ -1,0 +1,94 @@
+{
+  "prompt": {
+    "subject": {
+      "type": "adult woman",
+      "pose": "side profile, leaning forward against a balcony railing, head tilted back, eyes closed, one arm raised with hand resting in hair",
+      "expression": "calm, sensual, relaxed",
+      "gaze": "eyes closed",
+      "body_position": "upper body angled forward, torso slightly twisted, emphasizing natural curves",
+      "skin_tone": "warm tan complexion",
+      "visible_features": [
+        "defined cheekbones",
+        "soft jawline",
+        "natural makeup",
+        "long eyelashes",
+        "subtle highlight on cheekbones"
+      ]
+    },
+    "hair": {
+      "color": "dark brown",
+      "length": "long",
+      "style": "loose, voluminous, flowing backward as if caught by wind",
+      "texture": "smooth with natural waves"
+    },
+    "clothing": {
+      "outfit": "black satin slip dress",
+      "design": "thin spaghetti straps, deep neckline",
+      "fit": "form-fitting, elegant, minimalistic",
+      "fabric": "smooth satin with subtle sheen"
+    },
+    "accessories": {
+      "earrings": "large circular statement earrings with pearl detailing",
+      "bracelet": "pearl bracelet on raised arm",
+      "other": "no visible rings or necklaces"
+    },
+    "environment": {
+      "setting": "high-rise balcony",
+      "location_type": "modern city skyline",
+      "background_elements": [
+        "tall skyscrapers",
+        "glass and concrete buildings",
+        "urban landscape below"
+      ],
+      "depth_of_field": "shallow, softly blurred city background"
+    },
+    "lighting": {
+      "type": "natural daylight",
+      "direction": "soft side lighting from the city-facing side",
+      "quality": "warm, diffused, cinematic",
+      "highlights": "gentle highlights on skin and hair",
+      "shadows": "soft shadows enhancing depth and contours"
+    },
+    "camera": {
+      "angle": "slightly low angle, side profile",
+      "shot_type": "medium close-up",
+      "lens": "85mm portrait lens look",
+      "focus": "sharp focus on subject, background bokeh"
+    },
+    "mood": {
+      "atmosphere": "luxurious, intimate, cinematic",
+      "emotion": "confidence, elegance, serenity"
+    },
+    "style": {
+      "photorealism": "ultra realistic",
+      "dynamic_range": "HDR",
+      "detail_level": "extreme micro-detail on skin, fabric, hair",
+      "color_grading": "warm cinematic tones with natural contrast"
+    }
+  },
+  "negative_prompt": [
+    "cartoon",
+    "anime",
+    "illustration",
+    "cgi",
+    "over-smoothed skin",
+    "plastic look",
+    "distorted anatomy",
+    "extra limbs",
+    "blurry subject",
+    "low resolution",
+    "noise",
+    "harsh lighting",
+    "overexposed highlights"
+  ],
+  "output_settings": {
+    "resolution": "7680x4320",
+    "quality": "UHD 8K",
+    "aspect_ratio": "9:16",
+    "orientation": "vertical",
+    "render_style": "photographic",
+    "hdr": true,
+    "sharpness": "high",
+    "realism_boost": true
+  }
+}

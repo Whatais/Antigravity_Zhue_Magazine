@@ -1,0 +1,398 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Rss, 
+  CheckSquare, 
+  Square, 
+  RefreshCw, 
+  ExternalLink, 
+  Newspaper,
+  Globe,
+  AlertCircle,
+  Loader2,
+  List,
+  Search,
+  Clock,
+  Zap,
+  Download,
+  FileText,
+  Layers,
+  Sparkles
+} from 'lucide-react';
+
+// Exhaustive list extracted strictly from "The Global RSS Directory_ News and Technology Feeds.docx"
+const AVAILABLE_FEEDS = [
+  { id: '1', organization: 'CNN (Top Stories)', url: 'http://rss.cnn.com/rss/cnn_topstories.rss', category: 'US News' },
+  { id: '2', organization: 'CNN (World)', url: 'http://rss.cnn.com/rss/edition_world.rss', category: 'US News' },
+  { id: '3', organization: 'NYT (Home)', url: 'http://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml', category: 'US News' },
+  { id: '4', organization: 'NYT (World)', url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml', category: 'US News' },
+  { id: '5', organization: 'NBC News', url: 'https://feeds.nbcnews.com/nbcnews/public/news', category: 'US News' },
+  { id: '6', organization: 'ABC News', url: 'http://abcnews.go.com/abcnews/topstories', category: 'US News' },
+  { id: '7', organization: 'CBS News', url: 'https://www.cbsnews.com/latest/rss/main', category: 'US News' },
+  { id: '8', organization: 'Washington Post', url: 'http://www.washingtonpost.com/rss/', category: 'US News' },
+  { id: '9', organization: 'USA Today', url: 'http://rssfeeds.usatoday.com/usatoday-NewsTopStories', category: 'US News' },
+  { id: '10', organization: 'NPR News', url: 'http://www.npr.org/rss/rss.php?id=1001', category: 'US News' },
+  { id: '11', organization: 'Wall Street Journal', url: 'http://online.wsj.com/xml/rss/3_7085.xml', category: 'US News' },
+  { id: '12', organization: 'Politico', url: 'http://www.politico.com/rss/politicopicks.xml', category: 'US News' },
+  { id: '13', organization: 'Yahoo News', url: 'https://news.yahoo.com/rss/mostviewed', category: 'US News' },
+  { id: '14', organization: 'BBC World News', url: 'http://feeds.bbci.co.uk/news/world/rss.xml', category: 'Europe/UK' },
+  { id: '15', organization: 'Reuters (Europe)', url: 'http://feeds.reuters.com/reuters/EuropeNews', category: 'Europe/UK' },
+  { id: '16', organization: 'The Guardian', url: 'https://www.theguardian.com/world/rss', category: 'Europe/UK' },
+  { id: '17', organization: 'Daily Mail (UK)', url: 'https://www.dailymail.co.uk/home/index.rss', category: 'Europe/UK' },
+  { id: '18', organization: 'The Independent (UK)', url: 'http://www.independent.co.uk/news/uk/rss', category: 'Europe/UK' },
+  { id: '19', organization: 'The Local (Spain)', url: 'https://feeds.thelocal.com/rss/es', category: 'Europe/UK' },
+  { id: '20', organization: 'EU Reporter', url: 'https://eureporter.co/feed', category: 'Europe/UK' },
+  { id: '21', organization: 'Wired', url: 'http://feeds.wired.com/wired/index', category: 'Technology' },
+  { id: '22', organization: 'The Verge', url: 'https://www.theverge.com/rss/index.xml', category: 'Technology' },
+  { id: '23', organization: 'TechCrunch (Europe)', url: 'https://techcrunch.com/region/europe/feed', category: 'Technology' },
+  { id: '24', organization: 'Hacker News', url: 'https://news.ycombinator.com/rss', category: 'Technology' },
+  { id: '25', organization: 'Ars Technica', url: 'http://feeds.arstechnica.com/arstechnica/index', category: 'Technology' },
+  { id: '26', organization: 'Gizmodo', url: 'https://gizmodo.com/rss', category: 'Technology' },
+  { id: '27', organization: '9to5Mac', url: 'https://9to5mac.com/feed', category: 'Technology' },
+  { id: '28', organization: 'Engadget', url: 'https://www.engadget.com/rss.xml', category: 'Technology' }
+];
+
+const FILTER_OPTIONS = [
+  { label: 'All', value: 'all' },
+  { label: 'Last 24 Hours', value: 24 },
+  { label: 'Last 12 Hours', value: 12 },
+  { label: 'Last 6 Hours', value: 6 },
+];
+
+const App = () => {
+  const [selectedFeeds, setSelectedFeeds] = useState(new Set(['1', '14', '22'])); 
+  const [newsReport, setNewsReport] = useState([]);
+  const [selectedHeadlines, setSelectedHeadlines] = useState(new Set());
+  const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [view, setView] = useState('feeds'); 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [timeFilter, setTimeFilter] = useState('all');
+  const [aiResults, setAiResults] = useState(null);
+
+  const toggleFeed = (id) => {
+    const newSelection = new Set(selectedFeeds);
+    if (newSelection.has(id)) newSelection.delete(id);
+    else newSelection.add(id);
+    setSelectedFeeds(newSelection);
+  };
+
+  const toggleHeadline = (id) => {
+    const newSelection = new Set(selectedHeadlines);
+    if (newSelection.has(id)) newSelection.delete(id);
+    else newSelection.add(id);
+    setSelectedHeadlines(newSelection);
+  };
+
+  const parseRSS = (xmlString, sourceName) => {
+    try {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+      if (xmlDoc.getElementsByTagName("parsererror").length > 0) return [];
+      const items = xmlDoc.querySelectorAll("item, entry");
+      return Array.from(items).map((item, idx) => {
+        const title = item.querySelector("title")?.textContent || "No Title";
+        const linkElem = item.querySelector("link");
+        let link = "#";
+        if (linkElem) link = linkElem.textContent.trim() || linkElem.getAttribute("href") || "#";
+        const pubDate = item.querySelector("pubDate, published, updated, dc\\:date")?.textContent || "Unknown Date";
+        const timestamp = new Date(pubDate).getTime();
+        return {
+          id: `${sourceName}-${idx}-${timestamp}`,
+          source: sourceName,
+          title: title.replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1').trim(),
+          link: link,
+          pubDate: pubDate,
+          timestamp: timestamp
+        };
+      });
+    } catch (e) { return []; }
+  };
+
+  const fetchWithFallback = async (url, feedName) => {
+    const proxies = [
+      (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+      (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
+    ];
+    for (const proxyFn of proxies) {
+      try {
+        const proxyUrl = proxyFn(url);
+        const response = await fetch(proxyUrl);
+        if (!response.ok) continue;
+        const rawData = await response.text();
+        let xmlContent = rawData;
+        if (proxyUrl.includes('allorigins.win')) {
+          const json = JSON.parse(rawData);
+          xmlContent = json.contents;
+        }
+        if (xmlContent) {
+          const parsed = parseRSS(xmlContent, feedName);
+          if (parsed.length > 0) return parsed;
+        }
+      } catch (err) { continue; }
+    }
+    return [];
+  };
+
+  const fetchNews = async () => {
+    if (selectedFeeds.size === 0) {
+      setError("Please select at least one RSS feed.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setNewsReport([]);
+    setSelectedHeadlines(new Set());
+    setAiResults(null);
+    setView('report');
+    const feedsToFetch = AVAILABLE_FEEDS.filter(f => selectedFeeds.has(f.id));
+    try {
+      const fetchPromises = feedsToFetch.map(feed => fetchWithFallback(feed.url, feed.organization));
+      const results = await Promise.all(fetchPromises);
+      const allNews = results.flat().sort((a, b) => b.timestamp - a.timestamp);
+      setNewsReport(allNews);
+    } catch (err) { setError("Connectivity issue detected."); } finally { setLoading(false); }
+  };
+
+  const filteredReport = useMemo(() => {
+    if (timeFilter === 'all') return newsReport;
+    const now = Date.now();
+    const cutoff = now - (timeFilter * 60 * 60 * 1000);
+    return newsReport.filter(item => !isNaN(item.timestamp) && item.timestamp >= cutoff);
+  }, [newsReport, timeFilter]);
+
+  // --- Gemini API Logic ---
+  const generateAIHeadlines = async () => {
+    if (selectedHeadlines.size === 0) return;
+    setAiLoading(true);
+    setError(null);
+    
+    const selectedData = newsReport.filter(item => selectedHeadlines.has(item.id));
+    
+    const prompt = `You are a world-class Magazine Creative Director. For each news headline provided, use your reasoning to project 3 distinct "Front Page" story concepts that describe potential future developments or logical consequences.
+    
+    For EACH of the 3 concepts, you MUST generate:
+    1. A MAGAZINE HEADLINE: Extremely punchy, bold, and short (3-5 words).
+    2. A MAGAZINE SUBHEADLINE: A sharp, compelling follow-up sentence (max 12 words).
+
+    INSTRUCTIONS:
+    - Ensure the tone is elite, investigative, and high-impact.
+    - Stay strictly relevant to the original facts but reason out where the story goes next.
+    - Maintain key people and locations from the original text.
+
+    Format the output for each input story as:
+    STORY SOURCE: [Original Headline]
+    
+    COVER OPTION 1:
+    HEADLINE: [Punchy Text]
+    SUBHEADLINE: [Intriguing Follow-up]
+    
+    COVER OPTION 2:
+    HEADLINE: [Punchy Text]
+    SUBHEADLINE: [Intriguing Follow-up]
+    
+    COVER OPTION 3:
+    HEADLINE: [Punchy Text]
+    SUBHEADLINE: [Intriguing Follow-up]
+    ---
+    
+    Input Headlines:
+    ${selectedData.map(d => `- ${d.title}`).join('\n')}`;
+
+    const apiKey = "";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+    const fetchAI = async (retryCount = 0) => {
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+        if (!res.ok) throw new Error('API Error');
+        const data = await res.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text;
+      } catch (err) {
+        if (retryCount < 5) {
+          const delay = Math.pow(2, retryCount) * 1000;
+          await new Promise(r => setTimeout(r, delay));
+          return fetchAI(retryCount + 1);
+        }
+        throw err;
+      }
+    };
+
+    try {
+      const resultText = await fetchAI();
+      setAiResults(resultText);
+    } catch (err) {
+      setError("AI Editorial Engine encountered an error. Please try again.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const downloadReport = () => {
+    if (!aiResults) return;
+    const blob = new Blob([`ZHUE RSS - MAGAZINE FRONT PAGE EDITORIALS\nGenerated: ${new Date().toLocaleString()}\n\n${aiResults}`], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `zhue-magazine-front-pages-${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const filteredFeeds = AVAILABLE_FEEDS.filter(f => 
+    f.organization.toLowerCase().includes(searchTerm.toLowerCase()) || f.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+      <header className="bg-indigo-800 text-white shadow-xl sticky top-0 z-20">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setView('feeds')}>
+            <div className="bg-white p-1.5 rounded-lg"><Rss size={24} className="text-indigo-800" /></div>
+            <h1 className="text-2xl font-black tracking-tight italic">ZhueRSS</h1>
+          </div>
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <button onClick={() => setView('feeds')} className={`flex-1 md:flex-none px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-all font-semibold ${view === 'feeds' ? 'bg-indigo-900 shadow-inner' : 'hover:bg-indigo-700'}`}>
+              <List size={18} /> Directory
+            </button>
+            <button onClick={fetchNews} disabled={loading} className="flex-1 md:flex-none px-6 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 font-bold text-white shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-all">
+              {loading ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />} Generate Report
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto p-4 sm:p-8">
+        {error && (
+          <div className="mb-8 p-4 bg-red-50 border-2 border-red-100 text-red-700 flex items-center gap-3 rounded-xl shadow-sm"><AlertCircle size={20} /><p className="font-bold">{error}</p></div>
+        )}
+
+        {view === 'feeds' ? (
+          <div className="animate-in fade-in slide-in-from-top-4 duration-500 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div><h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2"><Globe className="text-indigo-600" size={24} /> Feed Directory</h2></div>
+              <div className="relative w-full sm:w-64"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} /><input type="text" placeholder="Search sources..." className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead><tr className="bg-slate-50 border-b border-slate-200 text-slate-400 text-[10px] uppercase font-black tracking-widest"><th className="px-8 py-5">Organization</th><th className="px-8 py-5">Category</th><th className="px-8 py-5 text-center">Select</th></tr></thead>
+                <tbody className="divide-y divide-slate-100">{filteredFeeds.map((feed) => (
+                  <tr key={feed.id} className={`hover:bg-indigo-50/30 transition-colors cursor-pointer ${selectedFeeds.has(feed.id) ? 'bg-indigo-50/50' : ''}`} onClick={() => toggleFeed(feed.id)}>
+                    <td className="px-8 py-5"><span className="font-bold text-slate-800">{feed.organization}</span></td>
+                    <td className="px-8 py-5"><span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-800 uppercase">{feed.category}</span></td>
+                    <td className="px-8 py-5 text-center"><div className="flex justify-center">{selectedFeeds.has(feed.id) ? <div className="bg-indigo-600 p-1 rounded-md"><CheckSquare className="text-white" size={18} /></div> : <Square className="text-slate-200" size={24} />}</div></td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className="animate-in fade-in duration-500">
+            {/* Action Bar for AI Generation */}
+            <div className="mb-6 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 bg-indigo-900 p-8 rounded-[2rem] text-white shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 opacity-5">
+                 <Sparkles size={120} />
+              </div>
+              <div className="space-y-1 relative z-10">
+                <h2 className="text-3xl font-black italic tracking-tighter flex items-center gap-3"><Zap className="text-yellow-400" /> Cover Story Engine</h2>
+                <p className="text-indigo-200 text-sm font-medium">Transform data into high-impact magazine front-page concepts.</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto relative z-10">
+                 <button onClick={generateAIHeadlines} disabled={selectedHeadlines.size === 0 || aiLoading} className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white rounded-2xl font-black text-sm transition-all flex items-center gap-2 shadow-lg active:scale-95">
+                   {aiLoading ? <Loader2 className="animate-spin" size={18} /> : <Layers size={18} />} Generate {selectedHeadlines.size} Concepts
+                 </button>
+                 {aiResults && (
+                   <button onClick={downloadReport} className="px-6 py-3 bg-white text-indigo-900 hover:bg-indigo-50 rounded-2xl font-black text-sm transition-all flex items-center gap-2 shadow-lg active:scale-95">
+                     <Download size={18} /> Download Dossier (.txt)
+                   </button>
+                 )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 mb-6">
+              <div className="bg-white p-1 rounded-xl border border-slate-200 shadow-sm flex items-center gap-1">
+                <div className="px-3 text-slate-400 border-r border-slate-100"><Clock size={16} /></div>
+                {FILTER_OPTIONS.map((opt) => (
+                  <button key={opt.value} onClick={() => setTimeFilter(opt.value)} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${timeFilter === opt.value ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>{opt.label}</button>
+                ))}
+              </div>
+              <div className="px-4 py-2 bg-white rounded-xl border border-slate-200 text-sm font-bold text-slate-400 uppercase tracking-widest">
+                Active Signals: <span className="text-indigo-600">{filteredReport.length}</span>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="bg-white rounded-[2rem] p-24 text-center border border-slate-200 flex flex-col items-center gap-6"><Loader2 className="animate-spin text-indigo-600" size={64} /><p className="text-xl font-bold text-slate-800 tracking-tight">Syncing Global Hubs...</p></div>
+            ) : filteredReport.length === 0 ? (
+              <div className="bg-white rounded-[2rem] p-20 text-center border border-slate-200 shadow-sm"><Rss className="text-slate-200 mx-auto mb-6" size={64} /><h3 className="text-2xl font-black text-slate-400 mb-2 uppercase tracking-tighter">No Active Signals</h3><button onClick={() => setView('feeds')} className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold">Back to Directory</button></div>
+            ) : (
+              <div className="space-y-8">
+                {aiResults && (
+                  <div className="bg-amber-50 border-2 border-amber-100 rounded-[2rem] p-8 animate-in zoom-in-95 shadow-lg">
+                    <div className="flex items-center gap-2 mb-6 text-amber-900 font-black uppercase text-xs tracking-[0.2em]"><FileText size={18} /> Front Page Concepts (Triple Reasoning)</div>
+                    <div className="bg-white rounded-3xl p-8 shadow-inner max-h-[30rem] overflow-y-auto font-serif text-lg text-slate-800 whitespace-pre-wrap leading-relaxed border border-amber-50 selection:bg-amber-100">
+                      {aiResults}
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-white rounded-[2rem] shadow-xl border border-slate-200 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/50 border-b border-slate-200 text-slate-400 text-[10px] uppercase tracking-[0.3em] font-black">
+                          <th className="px-8 py-6 w-[80px] text-center">Concept</th>
+                          <th className="px-8 py-6 w-1/5">Hub</th>
+                          <th className="px-8 py-6">Signal / Headline</th>
+                          <th className="px-8 py-6 text-right">Age</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredReport.map((news) => {
+                          const ageMs = Date.now() - news.timestamp;
+                          const ageHrs = Math.floor(ageMs / (3600000));
+                          return (
+                            <tr key={news.id} className={`hover:bg-indigo-50/20 transition-all group ${selectedHeadlines.has(news.id) ? 'bg-indigo-50/50' : ''}`}>
+                              <td className="px-8 py-8 text-center">
+                                <button onClick={() => toggleHeadline(news.id)} className={`w-8 h-8 rounded-xl border-2 transition-all flex items-center justify-center ${selectedHeadlines.has(news.id) ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-white border-slate-200 text-transparent hover:border-indigo-300'}`}>
+                                  <CheckSquare size={18} />
+                                </button>
+                              </td>
+                              <td className="px-8 py-8 align-top">
+                                <span className="inline-flex items-center px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 text-[10px] font-black uppercase border border-indigo-100 shadow-sm">
+                                  {news.source}
+                                </span>
+                              </td>
+                              <td className="px-8 py-8">
+                                <a href={news.link} target="_blank" rel="noopener noreferrer" className="block text-slate-900 text-xl font-bold hover:text-indigo-600 transition-colors leading-snug tracking-tight">{news.title}</a>
+                              </td>
+                              <td className="px-8 py-8 text-right align-top whitespace-nowrap">
+                                <span className="text-[12px] text-slate-500 font-black font-mono bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                                  {isNaN(ageHrs) ? 'LIVE' : `${ageHrs}H AGO`}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+
+      <footer className="mt-24 pb-12 text-center text-slate-400 text-[11px] font-black uppercase tracking-[0.4em]">
+        ZhueRSS Intelligence Aggregator • Front-Page Magazine Synthesis • Gemini 2.5 Flash
+      </footer>
+    </div>
+  );
+};
+
+export default App;

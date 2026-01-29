@@ -1,0 +1,47 @@
+{
+"magazine_name": "Zhué",
+"base_cover": {
+"file": "Zhué_Master_Cover.jpeg",
+"preserve": [
+"size",
+"structure",
+"title_position",
+"title_font",
+"title_size",
+"date_position",
+"date_font",
+"date_size",
+"qr_code_position",
+"qr_code_size"
+]
+},
+"central_image": {
+"file": "master_pic.png",
+"placement": "center",
+"adjust_to_predefined_size": true
+},
+"text_content": {
+"headlines_and_subheadlines": {
+"source_file": "Headlines_and_Titles.txt",
+"extract": true
+},
+"color_adjustment": "Match colors to main image and content",
+"font_adjustment": "Align fonts with main image and magazine theme"
+},
+"magazine_date": {
+"display": "current_system_date",
+"format": "DD MMM YYYY",
+"color_adjustment": "Match date color to central image"
+},
+"title": {
+"color_adjustment": "Match title color to central image",
+"preserve_font_and_position": true
+},
+"qr_code": {
+"preserve_position_and_size": true
+},
+"instructions": [
+"Do not alter the size, type, font, or position of the magazine title, date, or QR code.",
+"The magazine date should automatically use the current system date in the format 'DD MMM YYYY' (e.g., '26 Jan 2026')."
+]
+}
