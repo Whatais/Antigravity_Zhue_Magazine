@@ -48,3 +48,4 @@ Function: Takes the static cover produced by the Designer and applies motion eff
 Role: Pipeline Manager
 
 Function: This is the single entry point for the user. It autonomously chains the other five skills in the correct order—passing the RSS data to the Architect, the image to the Generator, and the assets to the Designer—executing the entire production workflow with a single prompt.
+
