@@ -1,13 +1,16 @@
-# Antigravity
-A comprehensive collection of examples, demos, and development patterns for the Antigravity tool.
+🚀 Magazine Cover Generator
+Automated design powered by Antigravity Skills.
 
-Antigravity: Examples & Developments
-This repository serves as the central hub for demonstrating the capabilities of Antigravity. It contains practical examples, implementation patterns, and experimental developments designed to help users leverage the tool effectively.
+Stop designing covers pixel-by-pixel. This repository houses a robust pipeline that accepts raw assets (headlines, hero images, barcodes) and utilizes Antigravity Skills to assemble high-resolution, print-ready magazine covers automatically.
 
-Key Contents:
+✨ Key Features
+Antigravity Integration: deeply integrated with Antigravity Skills for intelligent layout handling and asset positioning.
+Dynamic Typography: Automatic font scaling and color adjustment based on background contrast.
+Template Engine: Switch between "Tech", "Fashion", or "News" styles with a single config flag.
+Batch Processing: Generate 100+ variations in seconds for A/B testing or serialization.
 
-Core Demos: Standard use-cases and "Hello World" implementations.
+⚡ Usage
+No code execution or manual configuration is required. 
+The only thing you must do is open the Antigravity chat and run the following prompt:
+"I want to use the Zhué Magazine Master Orchestrator skill to produce the today's Zhué Magazine Cover"
 
-Advanced Patterns: Complex scenarios pushing the limits of the tool.
-
-Development Roadmap: Experimental features and works-in-progress.
