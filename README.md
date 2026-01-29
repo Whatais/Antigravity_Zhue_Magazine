@@ -12,7 +12,9 @@ Batch Processing: Generate 100+ variations in seconds for A/B testing or seriali
 
 ⚡ Usage
 No code execution or manual configuration is required. 
-The only thing you must do is open the Antigravity chat and run the following prompt:
+Usage: To generate a cover, follow these two simple steps:
+1. Configure the Visuals: Update the Image.json file with the JSON code for your desired background image.
+2. Run the Orchestrator: Open the Antigravity chat and enter the following prompt:
 "I want to use the Zhué Magazine Master Orchestrator skill to produce the today's Zhué Magazine Cover"
 
 🧩 Agent Skills Ecosystem
